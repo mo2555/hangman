@@ -223,7 +223,7 @@ public class Client {
             }
 
             OutputStream outputStream = new FileOutputStream("D:\\Intellij Projects\\hangman_project\\src\\database\\login_info.txt",true);
-String data =clientUsernameInfo + "," + clientPasswordInfo + "," + clientNameInfo;
+String data =clientUsernameInfo + "," + clientPasswordInfo + "," + clientNameInfo+"\n";
             outputStream.write(data.getBytes(), 0, data.length());
             outputStream.flush();
             outputStream.close();
