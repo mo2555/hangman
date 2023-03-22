@@ -225,7 +225,7 @@ public class ClientHandler implements Runnable {
                 broadcastMessages("gamePrint," + clientUserName + ",Waiting for players for joining the team...");
                 broadcastMessages("gamePrint," + clientUserName + ",Note : ");
                 broadcastMessages("gamePrint," + clientUserName + ",Minimum number of players per team are 2 ");
-                broadcastMessages("gamePrint," + clientUserName + ",Maximum number of players per team are 2 ");
+                broadcastMessages("gamePrint," + clientUserName + ",Maximum number of players per team are 5 ");
                 break;
             }
         }
@@ -237,13 +237,23 @@ public class ClientHandler implements Runnable {
         while (true) {
             broadcastMessages("gameInput," + clientUserName + ",Enter the team name : ");
             String teamName = handleMessageFromClient(bufferedReader.readLine());
-            if (!checkTeamName(teamName)) {
+            if (checkTeamName(teamName)) {
                 String adminUserName = getAdminTeamUseName(teamName);
-                myTeam = teamName + "," + adminUserName;
+                myTeam = teamName;
+                if (adminUserName.compareTo(clientUserName) == 0) {
+                    broadcastMessages("gamePrint," + clientUserName + ",Joined successfully");
+                    broadcastMessages("gamePrint," + clientUserName + ",Waiting for players for joining the team...");
+                    broadcastMessages("gamePrint," + clientUserName + ",Note : ");
+                    broadcastMessages("gamePrint," + clientUserName + ",Minimum number of players per team are 2 ");
+                    broadcastMessages("gamePrint," + clientUserName + ",Maximum number of players per team are 5 ");
+                } else {
+                    broadcastMessages("gamePrint," + clientUserName + ",Joined successfully");
+                    broadcastMessages("gamePrint," + clientUserName + ",Waiting for admin to start a game");
+                    broadcastMessages("gamePrint," + adminUserName + "," + clientUserName + " Has joined the team");
+                    updateTeamUsers();
+                    //broadcastMessages("gameInput," + adminUserName + "," + clientUserName + " Has joined the team");
+                }
 
-                broadcastMessages("gamePrint," + clientUserName + ",Joined successfully");
-                broadcastMessages("gamePrint," + clientUserName + ",Waiting for admin to start a game");
-                broadcastMessages("gamePrint," + adminUserName + ","+clientUserName +"Has joined the team");
 
                 break;
             } else {
@@ -270,6 +280,50 @@ public class ClientHandler implements Runnable {
             }
         }
         return false;
+    }
+
+    public void updateTeamUsers() {
+
+        Scanner phrasesScanner = null;
+        ArrayList<String> oldTeam = new ArrayList<>();
+        try {
+            phrasesScanner = new Scanner(new File("D:\\Intellij Projects\\hangman_project\\src\\database\\teams.txt"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        while (phrasesScanner.hasNext()) {
+            oldTeam.add(phrasesScanner.nextLine());
+        }
+
+        String p = "";
+        String n = "";
+
+        for (int index = 0; index < oldTeam.size(); index++) {
+            if (oldTeam.get(index).split(",")[0].compareTo(myTeam) == 0) {
+                p = oldTeam.get(index);
+                n = p + "," + clientUserName;
+            }
+        }
+
+        oldTeam.remove(p);
+        oldTeam.add(n);
+
+        String data = "";
+
+        for (String team : oldTeam) {
+            data += team + "\n";
+        }
+
+
+        try {
+            BufferedWriter outputStream = new BufferedWriter(new OutputStreamWriter(new PrintStream("D:\\Intellij Projects\\hangman_project\\src\\database\\teams.txt")));
+
+            outputStream.write(data);
+            outputStream.flush();
+            outputStream.close();
+        } catch (Exception e) {
+        }
+
     }
 
     public String getAdminTeamUseName(String teamName) {
