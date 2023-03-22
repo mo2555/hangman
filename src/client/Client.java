@@ -1,11 +1,7 @@
 package client;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Client {
@@ -222,8 +218,8 @@ public class Client {
 
             }
 
-            OutputStream outputStream = new FileOutputStream("D:\\Intellij Projects\\hangman_project\\src\\database\\login_info.txt",true);
-String data =clientUsernameInfo + "," + clientPasswordInfo + "," + clientNameInfo+"\n";
+            OutputStream outputStream = new FileOutputStream("D:\\Intellij Projects\\hangman_project\\src\\database\\login_info.txt", true);
+            String data = clientUsernameInfo + "," + clientPasswordInfo + "," + clientNameInfo + "\n";
             outputStream.write(data.getBytes(), 0, data.length());
             outputStream.flush();
             outputStream.close();

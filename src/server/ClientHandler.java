@@ -18,13 +18,16 @@ public class ClientHandler implements Runnable {
     private String clientUserName;
 
     private ArrayList<String> phrases;
+    private ArrayList<String> teams;
+    private String myTeam;
 
-    public ClientHandler(Socket socket, ArrayList<String> phrases) {
+    public ClientHandler(Socket socket, ArrayList<String> phrases, ArrayList<String> teams) {
         try {
             this.socket = socket;
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.phrases = phrases;
+            this.teams = teams;
             this.clientUserName = bufferedReader.readLine();
             clientHandlers.add(this);
             broadcastMessages("singleOrMulti," + clientUserName + ",Enter the number of option : 1) play as a single player 2) play with multiplayers");
@@ -76,6 +79,12 @@ public class ClientHandler implements Runnable {
     public String handleMessageFromClient(String message) {
         System.out.println(message);
         String[] data = message.split(",");
+
+        if (data[2].compareTo("-") == 0) {
+            removeClientHandler();
+            return "";
+        }
+
         switch (data[0]) {
 
             case "singleOrMulti": {
@@ -89,7 +98,6 @@ public class ClientHandler implements Runnable {
                 break;
             }
             case "gameInput": {
-
                 return data[2];
             }
 
@@ -128,7 +136,6 @@ public class ClientHandler implements Runnable {
                 }
 
 
-
             }
             //broadcastMessages(messageFromClient);
 
@@ -157,7 +164,7 @@ public class ClientHandler implements Runnable {
 
     private boolean printWordState(String word, List<Character> playerGuesses) {
         String wordToSend = "";
-        int dLength =0;
+        int dLength = 0;
         int correctCount = 0;
         for (int i = 0; i < word.length(); i++) {
             if (playerGuesses.contains(word.charAt(i))) {
@@ -172,15 +179,116 @@ public class ClientHandler implements Runnable {
         }
 
 
-        if(!(word.length()-dLength == correctCount)){
+        if (!(word.length() - dLength == correctCount)) {
             broadcastMessages("gamePrint," + clientUserName + "," + wordToSend);
             broadcastMessages("gameInput," + clientUserName + ",Please enter a letter:");
         }
-        return (word.length()-dLength == correctCount);
+        return (word.length() - dLength == correctCount);
     }
 
     public void playWithMultiPlayers(String username) {
+        try {
+            broadcastMessages("gamePrint," + username + ",Enter the number of option : ");
+            broadcastMessages("gamePrint," + username + ",1) Create team");
+            broadcastMessages("gameInput," + username + ",2) Join team");
 
+            String number = handleMessageFromClient(bufferedReader.readLine());
+            System.out.println(number.compareTo("1") == 0);
+            if (number.compareTo("1") == 0) {
+                createTeam();
+            } else {
+                joinTeam();
+            }
+
+        } catch (IOException e) {
+        }
+
+    }
+
+    public void createTeam() throws IOException {
+
+        while (true) {
+            broadcastMessages("gameInput," + clientUserName + ",Enter the team name : ");
+            String teamName = handleMessageFromClient(bufferedReader.readLine());
+            if (checkTeamName(teamName)) {
+                broadcastMessages("gamePrint," + clientUserName + ",Team name must be unique");
+                broadcastMessages("gamePrint," + clientUserName + ",Try again");
+            } else {
+                OutputStream outputStream = new FileOutputStream("D:\\Intellij Projects\\hangman_project\\src\\database\\teams.txt", true);
+                String data = teamName + "," + clientUserName + "\n";
+                outputStream.write(data.getBytes(), 0, data.length());
+                outputStream.flush();
+                outputStream.close();
+                teams.add(teamName);
+                myTeam = teamName + "," + clientUserName;
+                broadcastMessages("gamePrint," + clientUserName + ",Team created successfully");
+                broadcastMessages("gamePrint," + clientUserName + ",Waiting for players for joining the team...");
+                broadcastMessages("gamePrint," + clientUserName + ",Note : ");
+                broadcastMessages("gamePrint," + clientUserName + ",Minimum number of players per team are 2 ");
+                broadcastMessages("gamePrint," + clientUserName + ",Maximum number of players per team are 2 ");
+                break;
+            }
+        }
+
+    }
+
+    public void joinTeam() throws IOException {
+
+        while (true) {
+            broadcastMessages("gameInput," + clientUserName + ",Enter the team name : ");
+            String teamName = handleMessageFromClient(bufferedReader.readLine());
+            if (!checkTeamName(teamName)) {
+                String adminUserName = getAdminTeamUseName(teamName);
+                myTeam = teamName + "," + adminUserName;
+
+                broadcastMessages("gamePrint," + clientUserName + ",Joined successfully");
+                broadcastMessages("gamePrint," + clientUserName + ",Waiting for admin to start a game");
+                broadcastMessages("gamePrint," + adminUserName + ","+clientUserName +"Has joined the team");
+
+                break;
+            } else {
+                broadcastMessages("gamePrint," + clientUserName + ",Team name must be unique");
+                broadcastMessages("gamePrint," + clientUserName + ",Try again");
+            }
+        }
+    }
+
+    public boolean checkTeamName(String teamName) {
+        Scanner phrasesScanner = null;
+        teams = new ArrayList<>();
+        try {
+            phrasesScanner = new Scanner(new File("D:\\Intellij Projects\\hangman_project\\src\\database\\teams.txt"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        while (phrasesScanner.hasNext()) {
+            teams.add(phrasesScanner.nextLine());
+        }
+        for (String team : teams) {
+            if (team.split(",")[0].compareTo(teamName) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String getAdminTeamUseName(String teamName) {
+        Scanner phrasesScanner = null;
+        teams = new ArrayList<>();
+        try {
+            phrasesScanner = new Scanner(new File("D:\\Intellij Projects\\hangman_project\\src\\database\\teams.txt"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        while (phrasesScanner.hasNext()) {
+            teams.add(phrasesScanner.nextLine());
+        }
+        for (String team : teams) {
+            if (team.split(",")[0].compareTo(teamName) == 0) {
+                return team.split(",")[1];
+            }
+        }
+        return "";
     }
 
     public void removeClientHandler() {

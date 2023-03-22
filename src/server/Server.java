@@ -11,6 +11,7 @@ public class Server {
 
     private ServerSocket serverSocket;
     private ArrayList<String> phrases = new ArrayList<>();
+    private ArrayList<String> teams = new ArrayList<>();
 
     public Server(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
@@ -22,6 +23,14 @@ public class Server {
         }
         while (phrasesScanner.hasNext()) {
             phrases.add(phrasesScanner.nextLine());
+        }
+        try {
+            phrasesScanner = new Scanner(new File("D:\\Intellij Projects\\hangman_project\\src\\database\\teams.txt"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        while (phrasesScanner.hasNext()) {
+            teams.add(phrasesScanner.nextLine());
         }
     }
 
@@ -37,7 +46,7 @@ public class Server {
 
                 System.out.println("A new client has connected");
 
-                ClientHandler clientHandler = new ClientHandler(socket,phrases);
+                ClientHandler clientHandler = new ClientHandler(socket,phrases,teams);
 
                 Thread thread = new Thread(clientHandler);
                 thread.start();
@@ -45,8 +54,7 @@ public class Server {
             }
 
         } catch (Exception e) {
-            //closeServerSocket();
-            e.printStackTrace();
+            closeServerSocket();
         }
 
     }
