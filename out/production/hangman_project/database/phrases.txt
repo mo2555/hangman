@@ -1,12 +1,2 @@
 word
 test
-phrases
-work two
-work three
-work four
-work five
-work six
-work seven
-work eight
-work nine
-work ten

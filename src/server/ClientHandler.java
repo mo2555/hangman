@@ -23,6 +23,7 @@ public class ClientHandler implements Runnable {
     private ArrayList<String> phrases;
     private ArrayList<String> teams;
     private String myTeam;
+    private String enemy;
 
     public ClientHandler(Socket socket, ArrayList<String> phrases, ArrayList<String> teams) {
         try {
@@ -329,9 +330,11 @@ public class ClientHandler implements Runnable {
             team = teams.nextLine();
             if (team.split(",")[0].compareTo("searchingForTeam") == 0 && team.split(",")[1].compareTo(this.myTeam) != 0) {
                 enemyTeam = team;
+                enemy=team.split(",")[1];
             }
             if (team.split(",")[1].compareTo(this.myTeam) == 0) {
                 myTeam = team;
+                this.myTeam=team.split(",")[1];
             }
             oldTeam.add(team);
         }
@@ -389,6 +392,7 @@ public class ClientHandler implements Runnable {
         outputStream.flush();
         outputStream.close();
     }
+
     public void listenForMessage() {
 
         new Thread(new Runnable() {
@@ -407,9 +411,9 @@ public class ClientHandler implements Runnable {
 
                                 switch (data[0]) {
 
-                                    case "gameStartedInput":{
+                                    case "gameStartedInput": {
                                         System.out.println(data[2]);
-                                        broadcastMessages("gameStartedInputFromClient,"+data[1]+","+data[2]);
+                                        broadcastMessages("gameStartedInputFromClient," + data[1] + "," + data[2]);
                                         break;
                                     }
                                 }
@@ -424,6 +428,7 @@ public class ClientHandler implements Runnable {
         }).start();
 
     }
+
     public void gameStarted() {
         allTeamsMembers = new ArrayList<>();
         for (String team : myTeamMembers) {
@@ -443,71 +448,77 @@ public class ClientHandler implements Runnable {
             Integer enemyTeamWrongCount = 0;
             loop:
             while (true) {
-                boolean myTeamTurn = true;
-                for (int index = 0; index < allTeamsMembers.size() ; index++) {
+                boolean turn = true;
+                loop2:
+                for (int index = 0; index < allTeamsMembers.size(); index++) {
+
+                    if (index == ((allTeamsMembers.size() / 2))) {
+                        turn = false;
+                    }
+                    System.out.println("myTeamWrongCount===>" + myTeamWrongCount);
+                    System.out.println("turn===>" + turn);
+                    System.out.println("enemyTeamWrongCount===>" + enemyTeamWrongCount);
                     if (myTeamWrongCount >= 6) {
                         for (String team : myTeamMembers) {
-                            broadcastMessages("loseGame," + team + ",You lose!");
+                            broadcastMessages("loseGame," + team + "," + enemy + " won the game");
                             broadcastMessages("loseGame," + team + ",The word are : " + word);
                         }
                         for (String team : enemyTeamMembers) {
-                            broadcastMessages("winGame," + team + ",You win!");
+                            broadcastMessages("winGame," + team + "," + enemy + " won the game");
                             broadcastMessages("winGame," + team + ",The word are : " + word);
                         }
                         break loop;
-                    }
-                    if (enemyTeamWrongCount >= 6) {
-                        for (String team : enemyTeamMembers) {
-                            broadcastMessages("loseGame," + team + ",You lose!");
-                            broadcastMessages("loseGame," + team + ",The word are : " + word);
-                        }
+                    } else if (enemyTeamWrongCount >= 6) {
                         for (String team : myTeamMembers) {
-                            broadcastMessages("winGame," + team + ",You win!");
+                            broadcastMessages("loseGame," + team + "," + myTeam + " won the game");
+                            broadcastMessages("loseGame," + team + ",The word are : " + word);
+                        }
+                        for (String team : enemyTeamMembers) {
+                            broadcastMessages("winGame," + team + "," + myTeam + " won the game");
                             broadcastMessages("winGame," + team + ",The word are : " + word);
                         }
                         break loop;
                     }
-                    System.out.println(index);
-                    if (printWordStateMulti(word, playerGuesses,  allTeamsMembers.get(index))) {
-                        if (myTeamTurn) {
+                    if (printWordStateMulti(word, playerGuesses, allTeamsMembers.get(index))) {
+                        if (turn) {
                             for (String team : enemyTeamMembers) {
-                                broadcastMessages("loseGame," + team + ",You lose!");
+                                broadcastMessages("loseGame," + team + "," + myTeam + " won the game");
                                 broadcastMessages("loseGame," + team + ",The word are : " + word);
                             }
                             for (String team : myTeamMembers) {
-                                broadcastMessages("winGame," + team + ",You win!");
+                                broadcastMessages("winGame," + team + "," + myTeam + " won the game");
                                 broadcastMessages("winGame," + team + ",The word are : " + word);
                             }
+                            break loop;
                         } else {
                             for (String team : myTeamMembers) {
-                                broadcastMessages("loseGame," + team + ",You lose!");
+                                broadcastMessages("loseGame," + team + "," + enemy + " won the game");
                                 broadcastMessages("loseGame," + team + ",The word are : " + word);
                             }
                             for (String team : enemyTeamMembers) {
-                                broadcastMessages("winGame," + team + ",You win!");
+                                broadcastMessages("winGame," + team + "," + enemy + " won the game");
                                 broadcastMessages("winGame," + team + ",The word are : " + word);
                             }
+                            break loop;
                         }
-                        break loop;
+
                     }
                     if (!getPlayerGuessMulti(word, playerGuesses)) {
-                        if (myTeamTurn) {
+                        if (turn) {
                             myTeamWrongCount++;
                         } else {
                             enemyTeamWrongCount++;
                         }
                         for (String team : myTeamMembers) {
                             broadcastMessages("gamePrint," + team + ",Letter miss");
-                            broadcastMessages("gamePrint," + team + ",Misses : " + (myTeamTurn ? myTeamWrongCount : enemyTeamWrongCount));
+                            broadcastMessages("gamePrint," + team + ",Misses : " + (turn ? myTeamWrongCount : enemyTeamWrongCount));
                         }
                         for (String team : enemyTeamMembers) {
                             broadcastMessages("gamePrint," + team + ",Letter miss");
-                            broadcastMessages("gamePrint," + team + ",Misses : " + (myTeamTurn ? myTeamWrongCount : enemyTeamWrongCount));
+                            broadcastMessages("gamePrint," + team + ",Misses : " + (turn ? myTeamWrongCount : enemyTeamWrongCount));
                         }
 
                     }
-                    if(index==myTeamMembers.size()-1)
-                    myTeamTurn = false;
                 }
             }
             //broadcastMessages(messageFromClient);
@@ -531,9 +542,9 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        playerGuesses.add(letterGuess.charAt(0));
+        playerGuesses.add(letterGuess.toLowerCase().charAt(0));
 
-        return word.contains(letterGuess);
+        return word.toLowerCase().contains(letterGuess.toLowerCase());
     }
 
     private boolean printWordStateMulti(String word, List<Character> playerGuesses, String member) {
@@ -541,7 +552,7 @@ public class ClientHandler implements Runnable {
         int dLength = 0;
         int correctCount = 0;
         for (int i = 0; i < word.length(); i++) {
-            if (playerGuesses.contains(word.charAt(i))) {
+            if (playerGuesses.contains(word.toLowerCase().charAt(i))) {
                 wordToSend += word.charAt(i);
                 correctCount++;
             } else if (word.charAt(i) == ' ') {
