@@ -338,7 +338,7 @@ public class ClientHandler implements Runnable {
             }
             oldTeam.add(team);
         }
-        if (enemyTeam == null) {
+        if (enemyTeam == null||enemyTeam.split(",").length!=myTeam.split(",").length) {
             listenForMessage();
             return;
         }
