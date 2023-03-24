@@ -50,13 +50,13 @@ public class Client {
             @Override
             public void run() {
                 String messageFromServer;
-
+//"","",""
                 try {
                     while (socket.isConnected()) {
                         messageFromServer = bufferedReader.readLine();
                         if (messageFromServer != null && messageFromServer.compareTo("null") != 0) {
                             String[] data = messageFromServer.split(",");
-                            if (clientUserName.compareTo(data[1]) == 0 || data[1].compareTo("toAll") == 0) {
+                            if (clientUserName.compareTo(data[1]) == 0 ) {
 
                                 switch (data[0]) {
                                     case "singleOrMulti": {
@@ -77,6 +77,16 @@ public class Client {
                                         System.out.println(data[2]);
                                         String word = scanner.next();
                                         sendMessage("gameInput," + clientUserName + "," + word);
+                                        break;
+                                    }
+                                    case "gameStartedInput":{
+                                        System.out.println(data[3]);
+                                        String word = scanner.next();
+                                        sendMessage("gameStartedInput," + data[2] + "," + word);
+                                        break;
+                                    }
+                                    case "gameStartedInputFromClient":{
+                                        sendMessage("gameStartedInput," + data[1] + "," + data[2]);
                                         break;
                                     }
                                 }
