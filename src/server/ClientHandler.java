@@ -85,11 +85,6 @@ public class ClientHandler implements Runnable {
         System.out.println(message);
         String[] data = message.split(",");
 
-        if (data[2].compareTo("-") == 0) {
-            removeClientHandler();
-            return "";
-        }
-
         switch (data[0]) {
             case "singleOrMulti": {
                 if (data[2].compareTo("1") == 0) {
@@ -132,7 +127,11 @@ public class ClientHandler implements Runnable {
                     broadcastMessages("winGame," + username + ",You win!");
                     break;
                 }
-                if (!getPlayerGuess(word, playerGuesses)) {
+                Boolean test = getPlayerGuess(word, playerGuesses);
+                if (test == null) {
+                    break;
+                }
+                if (!test) {
                     wrongCount++;
                     broadcastMessages("gamePrint," + username + ",Letter miss");
                     broadcastMessages("gamePrint," + username + ",try again");
@@ -151,13 +150,18 @@ public class ClientHandler implements Runnable {
 
     }
 
-    private boolean getPlayerGuess(String word, List<Character> playerGuesses) {
+    private Boolean getPlayerGuess(String word, List<Character> playerGuesses) {
 
         String letterGuess = null;
         try {
             String message = bufferedReader.readLine();
             if (message != null && message.compareTo("null") != 0) {
                 letterGuess = handleMessageFromClient(message);
+                if (letterGuess.compareTo("-") == 0) {
+                    broadcastMessages("gameEnd," + clientUserName + ",SERVER : " + clientUserName + " has left the game");
+                    closeEveryThing(socket, bufferedReader, bufferedWriter);
+                    return null;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -198,7 +202,6 @@ public class ClientHandler implements Runnable {
             broadcastMessages("gameInput," + username + ",2) Join team");
 
             String number = handleMessageFromClient(bufferedReader.readLine());
-            System.out.println(number.compareTo("1") == 0);
             if (number.compareTo("1") == 0) {
                 createTeam();
             } else {
@@ -210,10 +213,8 @@ public class ClientHandler implements Runnable {
             }
             if (clientUserName.compareTo(getAdminTeamUseName(myTeam)) == 0) {
                 if (handleMessageFromClient(bufferedReader.readLine()).compareTo("1") == 0) {
-                    System.out.println("yes");
                     startGame();
                 } else {
-                    System.out.println("not");
                     String adminUserName = getAdminTeamUseName(myTeam);
                     broadcastMessages("gamePrint," + adminUserName + ",Waiting players for joining the team...");
                 }
@@ -328,17 +329,19 @@ public class ClientHandler implements Runnable {
         Scanner teams = new Scanner(new File("D:\\Intellij Projects\\hangman_project\\src\\database\\score_history.txt"));
         while (teams.hasNext()) {
             team = teams.nextLine();
+            if (team.isEmpty())
+                return;
             if (team.split(",")[0].compareTo("searchingForTeam") == 0 && team.split(",")[1].compareTo(this.myTeam) != 0) {
                 enemyTeam = team;
-                enemy=team.split(",")[1];
+                enemy = team.split(",")[1];
             }
             if (team.split(",")[1].compareTo(this.myTeam) == 0) {
                 myTeam = team;
-                this.myTeam=team.split(",")[1];
+                this.myTeam = team.split(",")[1];
             }
             oldTeam.add(team);
         }
-        if (enemyTeam == null||enemyTeam.split(",").length!=myTeam.split(",").length) {
+        if (enemyTeam == null || enemyTeam.split(",").length != myTeam.split(",").length) {
             listenForMessage();
             return;
         }
@@ -503,7 +506,7 @@ public class ClientHandler implements Runnable {
                         }
 
                     }
-                    if (!getPlayerGuessMulti(word, playerGuesses)) {
+                    if (!getPlayerGuessMulti(word, playerGuesses, allTeamsMembers.get(index))) {
                         if (turn) {
                             myTeamWrongCount++;
                         } else {
@@ -531,13 +534,27 @@ public class ClientHandler implements Runnable {
 
     }
 
-    private boolean getPlayerGuessMulti(String word, List<Character> playerGuesses) {
+    private Boolean getPlayerGuessMulti(String word, List<Character> playerGuesses, String member) {
 
         String letterGuess = null;
         try {
             String message = bufferedReader.readLine();
             if (message != null && message.compareTo("null") != 0) {
                 letterGuess = handleMessageFromClient(message);
+                if (letterGuess.compareTo("-") == 0) {
+                    for (String team : allTeamsMembers) {
+                        broadcastMessages("gamePrint," + team + ",SERVER : Game finished");
+                        if(team.compareTo(member)==0){
+                            broadcastMessages("gameEnd," + team + ",SERVER : you left the game");
+
+                            continue;
+                        }
+                        broadcastMessages("gameEnd," + team + ",SERVER : because " + member + " has left the game");
+
+                    }
+                    closeEveryThing(socket, bufferedReader, bufferedWriter);
+                    return null;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -680,7 +697,6 @@ public class ClientHandler implements Runnable {
 
     public void removeClientHandler() {
         clientHandlers.remove(this);
-        broadcastMessages("SERVER : " + clientUserName + " has left the game");
     }
 
     public void closeEveryThing(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {

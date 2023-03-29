@@ -56,7 +56,7 @@ public class Client {
                         messageFromServer = bufferedReader.readLine();
                         if (messageFromServer != null && messageFromServer.compareTo("null") != 0) {
                             String[] data = messageFromServer.split(",");
-                            if (clientUserName.compareTo(data[1]) == 0 ) {
+                            if (clientUserName.compareTo(data[1]) == 0) {
 
                                 switch (data[0]) {
                                     case "singleOrMulti": {
@@ -72,6 +72,10 @@ public class Client {
                                         System.out.println(data[2]);
                                         break;
                                     }
+                                    case "gameEnd": {
+                                        System.out.println(data[2]);
+                                        throw new Exception("End game.");
+                                    }
 
                                     case "gameInput": {
                                         System.out.println(data[2]);
@@ -79,13 +83,13 @@ public class Client {
                                         sendMessage("gameInput," + clientUserName + "," + word);
                                         break;
                                     }
-                                    case "gameStartedInput":{
+                                    case "gameStartedInput": {
                                         System.out.println(data[3]);
                                         String word = scanner.next();
                                         sendMessage("gameStartedInput," + data[2] + "," + word);
                                         break;
                                     }
-                                    case "gameStartedInputFromClient":{
+                                    case "gameStartedInputFromClient": {
                                         sendMessage("gameStartedInput," + data[1] + "," + data[2]);
                                         break;
                                     }
