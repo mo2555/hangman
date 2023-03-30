@@ -458,9 +458,6 @@ public class ClientHandler implements Runnable {
                     if (index == ((allTeamsMembers.size() / 2))) {
                         turn = false;
                     }
-                    System.out.println("myTeamWrongCount===>" + myTeamWrongCount);
-                    System.out.println("turn===>" + turn);
-                    System.out.println("enemyTeamWrongCount===>" + enemyTeamWrongCount);
                     if (myTeamWrongCount >= 6) {
                         for (String team : myTeamMembers) {
                             broadcastMessages("loseGame," + team + "," + enemy + " won the game");
@@ -506,7 +503,11 @@ public class ClientHandler implements Runnable {
                         }
 
                     }
-                    if (!getPlayerGuessMulti(word, playerGuesses, allTeamsMembers.get(index))) {
+                    Boolean test = getPlayerGuessMulti(word, playerGuesses, allTeamsMembers.get(index));
+                    if (test == null) {
+                        break loop;
+                    }
+                    if (!test) {
                         if (turn) {
                             myTeamWrongCount++;
                         } else {
@@ -544,7 +545,7 @@ public class ClientHandler implements Runnable {
                 if (letterGuess.compareTo("-") == 0) {
                     for (String team : allTeamsMembers) {
                         broadcastMessages("gamePrint," + team + ",SERVER : Game finished");
-                        if(team.compareTo(member)==0){
+                        if (team.compareTo(member) == 0) {
                             broadcastMessages("gameEnd," + team + ",SERVER : you left the game");
 
                             continue;
